@@ -1,5 +1,6 @@
 package ru.usernamedrew.synthetichumancorestarter.config;
 
+import jakarta.validation.Validator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,8 +15,8 @@ import java.util.concurrent.ExecutorService;
 public class SyntheticHumanAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public CommandProcessor commandProcessor(ExecutorService executorService) {
-        return new CommandProcessorImpl(executorService);
+    public CommandProcessor commandProcessor(ExecutorService executorService, Validator validator) {
+        return new CommandProcessorImpl(executorService, validator);
     }
 
     @Bean

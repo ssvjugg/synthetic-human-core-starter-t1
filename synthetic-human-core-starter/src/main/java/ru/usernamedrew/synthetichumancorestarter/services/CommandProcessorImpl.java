@@ -1,5 +1,6 @@
 package ru.usernamedrew.synthetichumancorestarter.services;
 
+import jakarta.validation.Validator;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -7,19 +8,26 @@ import ru.usernamedrew.synthetichumancorestarter.annotations.WeylandWatchingYou;
 import ru.usernamedrew.synthetichumancorestarter.api.Command;
 import ru.usernamedrew.synthetichumancorestarter.api.CommandProcessor;
 import ru.usernamedrew.synthetichumancorestarter.commands.CommandPriority;
+import ru.usernamedrew.synthetichumancorestarter.exceptions.CommandValidationException;
 import ru.usernamedrew.synthetichumancorestarter.exceptions.QueueOverflowException;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 
 @Service
 @AllArgsConstructor
 @Slf4j
 public class CommandProcessorImpl implements CommandProcessor {
     private final ExecutorService executor;
+    private final Validator validator;
 
     @Override
     @WeylandWatchingYou
     public void processCommand(Command command) {
+        if (!validator.validate(command).isEmpty()) {
+            throw new CommandValidationException("Invalid command");
+        }
+
         if (command.getPriority() == CommandPriority.CRITICAL) {
             executeCriticalCommand(command);
         } else {
@@ -32,6 +40,10 @@ public class CommandProcessorImpl implements CommandProcessor {
     }
 
     private void executeCommonCommand(Command command) {
-        executor.submit(() -> log.info("Executing common command {}", command));
+        try {
+            executor.submit(() -> log.info("Executing common command {}", command));
+        } catch(RejectedExecutionException e) {
+            throw new QueueOverflowException(e.getMessage());
+        }
     }
 }
