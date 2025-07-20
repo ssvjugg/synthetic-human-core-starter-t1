@@ -18,7 +18,7 @@ public class EnvPostProcessor implements EnvironmentPostProcessor {
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-        var resource = new ClassPathResource("application.properties");
+        var resource = new ClassPathResource("audit.properties");
         PropertySource<?> propertySource = null;
         try {
             propertySource = propertySourceLoader.load("weyland.audit", resource).get(0);
