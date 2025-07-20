@@ -1,5 +1,6 @@
 package ru.usernamedrew.synthetichumancorestarter.services;
 
+import jakarta.annotation.PreDestroy;
 import jakarta.validation.Validator;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import ru.usernamedrew.synthetichumancorestarter.api.CommandProcessor;
 import ru.usernamedrew.synthetichumancorestarter.commands.CommandPriority;
 import ru.usernamedrew.synthetichumancorestarter.exceptions.CommandValidationException;
 import ru.usernamedrew.synthetichumancorestarter.exceptions.QueueOverflowException;
+import ru.usernamedrew.synthetichumancorestarter.monitoring.CommandMetrics;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -19,6 +21,7 @@ import java.util.concurrent.RejectedExecutionException;
 @Slf4j
 public class CommandProcessorImpl implements CommandProcessor {
     private final ExecutorService executor;
+    private final CommandMetrics commandMetrics;
     private final Validator validator;
 
     @Override
@@ -33,17 +36,26 @@ public class CommandProcessorImpl implements CommandProcessor {
         } else {
             executeCommonCommand(command);
         }
+
+        commandMetrics.incrementAuthorCommandCount(command.getAuthor());
     }
 
+    // Обработка критических команд
     private void executeCriticalCommand(Command command) {
         log.info("Executing critical command {}", command);
     }
 
+    // Обработка обычных команд
     private void executeCommonCommand(Command command) {
         try {
             executor.submit(() -> log.info("Executing common command {}", command));
         } catch(RejectedExecutionException e) {
             throw new QueueOverflowException(e.getMessage());
         }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        executor.shutdownNow();
     }
 }
