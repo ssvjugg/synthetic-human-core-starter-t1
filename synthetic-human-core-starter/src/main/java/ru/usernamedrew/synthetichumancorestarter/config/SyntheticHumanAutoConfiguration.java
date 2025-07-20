@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
 import ru.usernamedrew.synthetichumancorestarter.api.CommandProcessor;
 import ru.usernamedrew.synthetichumancorestarter.aspects.AuditAspect;
@@ -16,6 +17,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 
 @Configuration
+@Import({CommandProcessorImplConfig.class})
 @EnableAspectJAutoProxy
 public class SyntheticHumanAutoConfiguration {
     @Bean
