@@ -13,7 +13,7 @@
     </Appenders>
     <Loggers>
         <!-- avoid duplicated logs with additivity=false -->
-        <Logger name="ru.usernamedrew.kafkahometaskt1" level="debug" additivity="false">
+        <Logger name="ru.usernamedrew.synthetichumancorestarter" level="debug" additivity="false">
             <AppenderRef ref="LogToConsole"/>
             <AppenderRef ref="LogToFile"/>
         </Logger>
