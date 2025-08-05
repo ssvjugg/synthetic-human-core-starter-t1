@@ -1,25 +1,22 @@
 package ru.usernamedrew.synthetichumancorestarter.aspects;
 
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
-import ru.usernamedrew.synthetichumancorestarter.config.AuditConfig;
+import ru.usernamedrew.synthetichumancorestarter.api.AuditService;
+import ru.usernamedrew.synthetichumancorestarter.aspects.models.AuditEvent;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 
 @Aspect
 @Component
 @AllArgsConstructor
-@Slf4j
 public class AuditAspect {
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final AuditConfig auditConfig;
+    private final AuditService auditService;
 
     @Pointcut("@annotation(ru.usernamedrew.synthetichumancorestarter.annotations.WeylandWatchingYou)")
     public void anyWeylandWatchingYouAnnotatedMethods() {}
@@ -29,16 +26,21 @@ public class AuditAspect {
         String className = joinPoint.getClass().getName();
         String methodName = joinPoint.getSignature().getName();
         Object[] args = joinPoint.getArgs();
-        Object result = joinPoint.proceed();
 
-        String auditLog = String.format("Class: %s\n Method: %s\n Arguments: %s\n Result: %s\n", className, methodName, Arrays.toString(args), result);
+        var builder = AuditEvent.builder()
+                .method(methodName)
+                .arguments(Arrays.toString(args))
+                .timestamp(LocalDateTime.now());
 
-        if ("CONSOLE".equals(auditConfig.getMode())) {
-            log.info(auditLog);
-        } else {
-            kafkaTemplate.send(auditConfig.getTopic(), auditLog);
+        try {
+            Object result = joinPoint.proceed();
+            builder.executionStatus(AuditEvent.ExecutionState.SUCCESS);
+            return result;
+        } catch (Throwable throwable) {
+            builder.executionStatus(AuditEvent.ExecutionState.EXECEPTION);
+            throw throwable;
+        } finally {
+            auditService.audit(builder.build());
         }
-
-        return result;
     }
 }
